@@ -84,8 +84,19 @@ legend("topleft", legend = c("Prior", "Likelihood", "Posterior"),
        text.col = c(1,2,4), bty = "n")
 sum(pThetaGivenData2*theta2/10) #2nd simulation yield 0.533 as the estimation for theta given the data
 
+#Next we'll proceed into a simulation to show a case where ones' prior belief can be
+#broadly useful for statistical inference
 
-###Simulating sampling model
+###Prevalence of certain disease's infection (taken from Hoff, PD (2009))
+#Suppose we are interested in the prevalence of certain disease in a city.
+#Higher prevalence should be handled with more health precaution.
+#Random sample of 20 individuals is taken,checked for the infection
+#From this illustration, we are interested in theta as the proportion of the infected.
+#If theta is known, it's reasonable enough to use the binomial distribution such that
+#Y | theta ~ bin(20, theta)
+#Lets simulate this distribution given several values for theta
+
+##Simulating sampling model
 n = 20
 theta = c(0.05,0.1, 0.2)
 J = length(theta)
@@ -95,24 +106,31 @@ for (j in 1:J){
   for (i in 1:n){
     prob[i,j]<-dbinom(i,n,theta[j])
     i2<-i+.1
-    i3<-i2+.1
-    }
-}
+    i3<-i2+.1}}
 
-plot(prob[,1], ylab="Probability of getting infected", xlab="Number of infected")
+plot(prob[,1], ylab="Probability of getting infected", xlab="Number of infected",
+     main = "Comparison of binomial sampling model")
 segments(1:n, 0, 1:n, prob[,1])
-
 #Adding the prob for theta2 = .1
 points(prob[,2], col="red")
 segments(1:n, 0, 1:n, prob[,2], col="red")
-
 #Adding the prob for theta3 = .2
 points(prob[,3], col="blue")
 segments(1:n, 0, 1:n, prob[,3], col="blue")
 colour = c("black", "red", "blue")
-labels = c("theta 0.05", "theta 0.1","theta 0.2")
-legend("topright", inset=.05, title="Sampling model for Binomial sample",labels, lwd=2, lty=c(1, 1, 1), col=colour, bty="n")
+labels = c("0.05", "0.1","0.2")
+legend("topright", inset=.05, title="Theta",labels, lwd=2, lty=c(1, 1, 1), col=colour, bty="n")
 
+#Next, suppose there is a study saying the infection rate for the disease is around
+#0.05 to 0.2 with an average 0.1 between observed cities.
+#This information suggests that the prior distribution that is to be used
+#should have substantial amount of probability for the interval (0.05 , 0.2) and an
+#expected value of theta is around 0.1.
+#Such distribution os of course not as unique and in fact there are wide range of 
+#option for distributions which satisfy the previous constraints.
+#Thus, we can choose the prior based on the mathematical convenience.
+#In this case, we will proceed with beta as prior distribution, specifically
+#beta(2,20) in which the expectation and most probable value is 0.1 and 0.05
 #generating a random number from a prior beta(a,b) distribution
 nrand = 100000
 a = 2
