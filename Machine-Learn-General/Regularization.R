@@ -105,3 +105,44 @@ grid.arrange(train %>% ggplot(aes(x, y), xl ) +
 #which performs "okayish" in train data but not falling off greatly when fitted into a test data.
 #To set such constraint in the model, regularization apply whats called "penalty term".
 #This penalty works as to adjust to the previous condition : stabilizing performance on train and test data.
+#Next, lets try applying three examples of regularization in linear regression : ridge, lasso, and elastic net
+
+#First lets simulate new data with big number of variables
+set.seed(919191) 
+n = 1200    
+p = 5000    
+real_p = 1234  
+#Lets say we want 1200 observations with 5000 predictors and 1234 true predictors
+#Simulate the data
+x = matrix(rnorm(n*p), nrow=n, ncol=p)
+y = apply(x[,1:real_p], 1, sum) + rnorm(n)
+
+#Split data into train (40%) and test (60%) sets
+train_rows = sample(1:n, .4*n)
+x.train = x[train_rows, ]
+x.test = x[-train_rows, ]
+y.train = y[train_rows]
+y.test = y[-train_rows]
+
+#Fit the models
+list.of.fits = list()
+for (i in 0:5) {
+  fit.name = paste0("alpha", i/5)
+  list.of.fits[[fit.name]] = cv.glmnet(x.train, y.train, type.measure="mse", 
+                                        alpha=i/5, family="gaussian")
+}
+#In cv.glmnet function, alpha = 0 means we are doing ridge regression penalty, while alpha = 1 means we are  
+#using lasso regression penalty, otherwise we are doing elastic net.
+
+#Cross-validation
+results = data.frame()
+for (i in 0:5) {
+  fit.name = paste0("alpha", i/5)
+  predicted = 
+    predict(list.of.fits[[fit.name]], 
+            s=list.of.fits[[fit.name]]$lambda.1se, newx=x.test)
+  mse = mean((y.test - predicted)^2)
+  temp = data.frame(alpha=i/5, mse=mse, fit.name=fit.name)
+  results = rbind(results, temp)
+}
+results
