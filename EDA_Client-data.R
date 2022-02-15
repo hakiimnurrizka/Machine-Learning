@@ -1,4 +1,4 @@
-### Exploratory Data Analysis on client Data ###
+### Exploratory Data Analysis on Client Data ###
 library(readxl)
 library(ggplot2)
 library(corrplot)
