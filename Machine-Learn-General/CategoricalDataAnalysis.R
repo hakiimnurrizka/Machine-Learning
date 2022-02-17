@@ -5,7 +5,9 @@ library(dplyr)
 library(lessR)
 library(plotrix)
 library(corrplot)
-library(ca)
+library(FactoMineR)
+library(factoextra)
+library(MASS)
 
 ## Data preparation
 # Load data and picking the categorical variables
@@ -65,7 +67,26 @@ mantelhaen.test(sex.marry, conf.level = )
 sex.marry
 oddsratio(sex.marry, log = FALSE) #comparison of odds ratio for each marriage status
 #Correspondence
-#Another way to explore the relationship between row and collumn
-ca_sex = ca(margin.table(sex.marry, c(1,2)))
-ca(margin.table(sex.marry, c(1,2)))
-plot(ca_sex)
+#Another way to explore the relationship between row and column
+edu.marry = table(client_train1$EDUCATION, client_train1$MARRIAGE)
+edu.marry
+ca_edu = CA(edu.marry, graph = TRUE)
+get_eigenvalue(ca_edu)
+fviz_screeplot(ca_edu, addlabels = TRUE)
+
+## Loglinear model
+# Lets analyze together the three categorical predictors : SEX, EDUCATION, AND MARRIAGE
+cat_preds = xtabs(~SEX+EDUCATION+MARRIAGE, data = client_train1)
+loglm_pred1 = loglm(~SEX+EDUCATION+MARRIAGE, data = cat_preds)
+loglm_pred1
+loglm_pred2 = loglm(~SEX*EDUCATION+MARRIAGE, data = cat_preds)
+loglm_pred3 = loglm(~(SEX+EDUCATION)*MARRIAGE, data = cat_preds)
+loglm_pred4 = loglm(~SEX*EDUCATION+SEX*MARRIAGE+EDUCATION*MARRIAGE, data = cat_preds)
+anova(loglm_pred1, loglm_pred2, loglm_pred3, loglm_pred4)
+#Best model chosen is loglm_pred4
+
+## Mosaic plot
+#Visualizing contingency table and also to see the fit from loglinear model
+plot(loglm_pred4, main="model: [SEX][EDUCATION][MARRIAGE]")
+#Graduate school clients are mostly male and married followed by single female. While for university shows
+#reversed pattern.
