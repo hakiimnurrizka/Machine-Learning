@@ -74,3 +74,87 @@ table(pokemon$is_legendary, pokemon1$km1_clust)
 fviz_nbclust(pokemon1[,1:6], FUNcluster = kmeans, method = "silhouette", nboot = 1000)
 #Optimal cluster is 8, which means kmeans has different result on clustering the transformed data than
 #the previous hierarchical clustering.
+#Lets proceed with a more suitable model to classification problem.
+
+##Discriminant Analysis
+#We'll start by going back on the complete cleaned pokemon data data. The model we are trying to build is
+#a classifier for legendary pokemon based on all available status and properties for pokemon.
+#Lets try to fit simple linear discriminant function for our data
+library(mda)
+library(klaR)
+library(MASS)
+
+#We'll do splitting train-test data
+poke1 = pokemon[pokemon$is_legendary == 1,]
+poke0 = pokemon[pokemon$is_legendary == 0,]
+set.seed(420)
+id1 = sample(1:nrow(poke1), 0.7*nrow(poke1))
+id0 = sample(1:nrow(poke0), 0.7*nrow(poke0))
+poke_train = rbind(poke1[id1,], poke0[id0,])
+poke_train = na.exclude(poke_train)
+poke_test = rbind(poke1[-id1,], poke0[-id0,])
+poke_test = na.exclude(poke_test)
+
+
+ld1_poke = lda(is_legendary~. , data = poke_train) #we ran into multicollinearity problem, but for now lets move on
+plot(ld1_poke)
+predict_ld = predict(ld1_poke, poke_train[,-33])
+predict_ld$class[is.na(predict_ld$class)] = 0
+predict_ld$class
+table(poke_train$is_legendary, predict_ld$class)
+mean(poke_train$is_legendary == predict_ld$class)
+#Pretty high accuracy
+#Apply it to the test data
+predict_ld1 = predict(ld1_poke, poke_test[,-33])
+#lets put na values as 0/non legendary since it is more likely
+predict_ld1$class[is.na(predict_ld1$class)] = 0
+table(poke_test$is_legendary, predict_ld1$class)
+mean(poke_test$is_legendary == predict_ld1$class)
+#A perfect classification. In all honesty, this is quite suspicious since 100% accuracy making it seems 
+#to be a perfect fit, even on test data rather than in train which implies that this is not a case of
+#over-fitting. But we ran into problems on multicollinearity and classifying, which is not wanted.
+#So lets see how well a more complicated discriminant model will handle pokemon data.
+#We'll try to improve our performance by changing the model to nonlinear discriminant function.
+fd1_poke = fda(is_legendary~. , data = poke_train)
+fd1_poke$confusion
+predict_fd1 = predict(fd1_poke, poke_test[,33])
+md1_poke = mda(is_legendary~. , data = poke_train)
+md1_poke$confusion 
+predict_md1 = predict(md1_poke, poke_test[,-33])
+#Problem arise on predicting for test data. This seems due to at a point,the function generate NAs. Some
+#discussions about this problems suggest to normalize the data and making sure our target is a factor.
+poke_train_scaled = data.frame(as.data.frame(lapply(poke_train[,-c(30,33)], scale)), is_legendary = poke_train$is_legendary, 
+                                        type1 = poke_train$type1)
+poke_test_scaled = data.frame(as.data.frame(lapply(poke_test[,-c(30,33)], scale)), is_legendary = poke_test$is_legendary, 
+                               type1 = poke_test$type1)
+
+fd1_poke = fda(is_legendary~. , data = poke_train_scaled)
+fd1_poke$confusion
+predict_fd1 = predict(fd1_poke, poke_test_scaled[,-32])
+poke_train$is_legendary = as.factor(poke_train$is_legendary)
+poke_test$is_legendary = as.factor(poke_test$is_legendary)
+fd1_poke = fda(is_legendary~. , data = poke_train)
+fd1_poke$confusion
+predict_fd1 = predict(fd1_poke, poke_test[,33])
+md1_poke = mda(is_legendary~. , data = poke_train)
+md1_poke$confusion 
+predict_md1 = predict(md1_poke, poke_test[,-33])
+#The problem seems to still persist after my attempt to mitigate it. Therefore, ill redo it from the beginning
+#and do a dimension reduction first to the data.
+#We'll use recursive feature selection to try eliminate the noise variables
+library(caret)
+mdaFuncs = ldaFuncs
+mdaFuncs$fit = function(x, y, first, last, ...) {
+  library(mda)
+  mda(x, y, ...)
+}
+mdaFuncs$summary = twoClassSummary
+cvIndex = createMultiFolds(poke_train$is_legendary, times = 2)
+mdaRfe = rfe(x = poke_train, 
+              y = poke_train$is_legendary, 
+              sizes = 1:(ncol(poke_train)), 
+              metric = "ROC", 
+              rfeControl = rfeControl(method = "repeatedcv", 
+                                      repeats = 2, 
+                                      index = cvIndex, 
+                                      functions = mdaFuncs))
