@@ -57,11 +57,12 @@ ggline(aquifer, x = "type", y = "glength",
 Axeann = aquifer[aquifer$type == "Axeann",] #Filter data by type of limestone
 View(Axeann)
 den.ax = Axeann[,2]#Choose second collumn only
+den.ax
 #Suppose we have a claim that says density of aquifer land which limestone type is Axeann has an average of 2.7g/cm3
 #To test whether this claim is true or not, we can do 2 type of parametric test.
 #First is is test of mean difference using Z statistics, secondly using one population t test.
-#For Z statistics, we can only this method IF we know the true value of population's variance.
-#Lets say the value of population varince for bulk density of Axeann aquifer is 0.003g/cm3
+#For Z statistics, we can only use this method IF we know the true value of population's variance.
+#Lets say the value of population variance for bulk density of Axeann aquifer is 0.003g/cm3
 xbar = mean(den.ax)#Sample mean from density of axeann aquifer
 mu = 2.7#Hypothesized population
 n = length(den.ax)#Number of observations in sample
@@ -131,7 +132,7 @@ y = aquifer[, 4]
 r = sum((x-mean(x))*(y-mean(y)))/sqrt(sum((x-mean(x))^2)*sum((y-mean(y))^2))
 r
 cor(x,y)    
-#Correlation coeffiecient values are ranged within [-1,1], that is in this case the correlation between
+#Correlation coefficient values are ranged within [-1,1], that is in this case the correlation between
 #porosity and residue fall within "positive side". That is in another words, the correlation is positive
 #meaning that the previous identification of both variable change together in the same direction is somewhat
 #true.
@@ -139,7 +140,7 @@ cor(x,y)
 #Lets say we claim that the correlation between porosity and residue is significantly positive, that is
 #in the hypothesis testing we want to test null H0 : r <= 0 vs alternative H1 : r > 0 (a one way hypothesis test)
 cor.test(x,y, alternative = "greater")#We specify our alternative hypothesis
-#The t statistics for the coefficient correlation r is 2.54 which correponds to p value of one way test 0.008.
+#The t statistics for the coefficient correlation r is 2.54 which corresponds to p value of one way test 0.008.
 #That is we can reject null at the significance level 0.05 and conclude that the claim of "positive association"
 #between porosity and residue of aquifer is true.
 
@@ -168,7 +169,7 @@ b0
 #Thus we get our regression line for predicting residue (y) using porosity (x) is
 #y = 6.709685 + 1.663072 * x
 #we can use the regression line above to predict residue of aquifer with certain value of porosity.
-#Say, we want to predict residue of aquifer with porosity 5
+#Say, we want to predict residue of an aquifer with porosity 5
 pred = 6.709685 + 1.663072 * 5
 pred
 #So we predict by using the regression line above that the residue of aquifer with porosity 5 is equal to 15.025%
